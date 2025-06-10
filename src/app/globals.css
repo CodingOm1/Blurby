@@ -1,0 +1,61 @@
+@import "tailwindcss";
+
+
+
+.font-inter {
+  font-family: var(--font-inter);
+}
+
+.font-sora {
+  font-family: var(--font-sora);
+}
+
+.font-poppins {
+  font-family: var(--font-poppins);
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-slideDown {
+  animation: slideDown 0.3s ease-out;
+}
+
+@keyframes float {
+  0% { transform: translateY(0); }
+  50% { transform: translateY(-30px); }
+  100% { transform: translateY(0); }
+}
+
+
+a{
+  text-decoration: none;
+  color: inherit;
+}
+.mod_shadow {
+  box-shadow: -15px 15px 70px rgba(0, 0, 0, 0.582), inset 0px 0px 50px rgba(0, 0, 0, 0.233);
+  border: 1px solid rgba(255, 255, 255, 0.233);
+}
+
+input.md_input {
+  width: 100%;
+  padding: 10px 10px;
+  background-color: #383347;
+  border-radius: 5px;
+  font-size: 15px;
+  font-family: var(--font-poppins);
+  color: #fff;
+  font-weight: 400;
+  outline: 2px solid transparent;
+  transition: all .4s ease-in-out;
+  transform-origin: left center;
+}
+input.md_input::placeholder {
+  color: #b0b0b06b;
+  font-weight: 400;
+}
+input.md_input:focus {
+  outline: 2px solid #8d77ac;
+  border-radius: 7px;
+}
