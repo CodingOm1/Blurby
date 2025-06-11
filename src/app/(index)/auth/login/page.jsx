@@ -1,7 +1,9 @@
 'use client'
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import Link from 'next/link'
 import axios from 'axios'
+import { useRouter } from 'next/navigation'
+
 
 
 export default function Page() {
@@ -10,10 +12,21 @@ export default function Page() {
   const [password, setPassword] = useState('')
 
 
+  const router = useRouter();
 
-  
+
+  useEffect(() => {
+    const token = localStorage.getItem("blurbyToken");
+    if (token) {
+      router.push('/dashboard');
+    }
+  }, [router]);
   const handleSubmit = async (e) => {
+
     e.preventDefault()
+
+
+
 
     const formData = {
       email: email,
@@ -26,6 +39,9 @@ export default function Page() {
       )
       console.log(response.data)
       localStorage.setItem("blurbyToken", response.data.token)
+      if (response.status === 200 || response.status === 201) {
+        router.push('/dashboard')
+      }
     } catch (error) {
       console.log("Error", error)
     }
@@ -52,26 +68,26 @@ export default function Page() {
         {/* RIGHT FORM SECTION */}
         <div className="right w-full md:w-[50%] h-[95%] md:h-full pl-2 md:pl-10 -mt-10">
           <form onSubmit={handleSubmit} className='flex flex-col items-start gap-5 w-full h-full justify-center'>
-           <div className="flex items-center justify-center w-full gap-5 mb-10">
-             <img src="/blurby.png" width={50} alt="" />
-          <h2 className='text-3xl md:text-3xl text-white font-inter  md:-pt-5'>Login your account</h2>
-            
-           </div>
+            <div className="flex items-center justify-center w-full gap-5 mb-10">
+              <img src="/blurby.png" width={50} alt="" />
+              <h2 className='text-3xl md:text-3xl text-white font-inter  md:-pt-5'>Login your account</h2>
 
-        
+            </div>
+
+
             <input className='md_input w-full' type="email" placeholder='Email' required value={email} onChange={(e) => { setEmail(e.target.value) }} />
             <input className='md_input w-full' type="password" placeholder='Password' required value={password} onChange={(e) => { setPassword(e.target.value) }} />
- 
+
 
             <button className='w-full mt-5 cursor-pointer md:mt-5 py-3 bg-purple-700 rounded-md text-white font-inter hover:bg-purple-600 transition-all'>
               Login
             </button>
-          <p className='px-2 py-4 text-gray-500 font-poppins text-[14px] md:-mt-5'>
-            Don't have an account?
-            <Link href={'/auth/signup'}>
-              <span className='text-purple-600 font-semibold cursor-pointer hover:underline'> Sign Up</span>
-            </Link>
-          </p>
+            <p className='px-2 py-4 text-gray-500 font-poppins text-[14px] md:-mt-5'>
+              Don't have an account?
+              <Link href={'/auth/signup'}>
+                <span className='text-purple-600 font-semibold cursor-pointer hover:underline'> Sign Up</span>
+              </Link>
+            </p>
           </form>
 
         </div>

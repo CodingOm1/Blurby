@@ -36,9 +36,13 @@ const userSchema = new mongoose.Schema({
         default: Date.now // Automatically set the update date
     },
     verified:{
+        type: String,
+        default: "normal",
+        enum: ["normal", "silver", "golden"]
+    },
+    restirictio: {
         type: Boolean,
-        default: false,
-        
+        default: false
     }
     
 

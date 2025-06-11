@@ -59,3 +59,24 @@ input.md_input:focus {
   outline: 2px solid #8d77ac;
   border-radius: 7px;
 }
+.modern_sc {
+    scrollbar-width: thin;
+    scrollbar-color: #c2c2c2 transparent;
+}
+
+.modern_sc::-webkit-scrollbar {
+    width: 6px;
+}
+
+.modern_sc::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.modern_sc::-webkit-scrollbar-thumb {
+    background-color: #c2c2c2;
+    border-radius: 50px;
+}
+
+.modern_sc:hover::-webkit-scrollbar-thumb {
+    background-color: #999999;
+}
