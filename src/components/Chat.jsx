@@ -1,3 +1,5 @@
+'use client'
+
 import React from 'react'
 
 export default function Chat({ name, lastTime, lastMessage, isOnline, unread  }) {
@@ -7,7 +9,7 @@ export default function Chat({ name, lastTime, lastMessage, isOnline, unread  })
                 {/* Profile Image */}
                 <div className='w-12 h-12 border border-zinc-300 relative rounded-full shrink-0'>
                     <div className='w-full h-full rounded-full overflow-hidden'>
-                    <img src="/blurby.png" className='w-full h-full object-cover ' alt="" />
+                    <img src="https://cdn3d.iconscout.com/3d/premium/thumb/profile-3d-icon-download-in-png-blend-fbx-gltf-file-formats--user-about-me-member-interface-pack-icons-4996977.png" className='w-full h-full object-cover ' alt="" />
 
                     </div>
                     {isOnline && <div className='online w-3 h-3 bg-green-600 border-2 border-[#F6F6F6] rounded-full absolute bottom-0 right-1 translate-x-1 z-9'></div>}

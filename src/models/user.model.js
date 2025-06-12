@@ -40,7 +40,7 @@ const userSchema = new mongoose.Schema({
         default: "normal",
         enum: ["normal", "silver", "golden"]
     },
-    restirictio: {
+    restiriction: {
         type: Boolean,
         default: false
     }

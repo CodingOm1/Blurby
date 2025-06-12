@@ -1,6 +1,6 @@
 'use client';
 import Navbar from "@/components/Navbar";
-import React from "react";
+import React, { useEffect } from "react";
 import Link from "next/link";
 import AuthChecker from "../../middleware";
 
@@ -8,6 +8,8 @@ export default function Page() {
 
 
   AuthChecker()
+
+  
 
 
   return (
@@ -31,12 +33,12 @@ export default function Page() {
               Blurby is the modern way to chat and share media with your circle — fast, fun, and free.
             </p>
             <Link href="/auth/signup">
-            <button  className="mt-6 px-6 py-3 bg-purple-500 text-white rounded-full hover:bg-purple-600 transition-all cursor-pointer text-sm sm:text-base">
-              🚀 Start Chatting
-            </button></Link>
+              <button className="mt-6 px-6 py-3 bg-purple-500 text-white rounded-full hover:bg-purple-600 transition-all cursor-pointer text-sm sm:text-base">
+                🚀 Start Chatting
+              </button></Link>
           </div>
 
-        </div> 
+        </div>
       </section>
     </div>
   );
