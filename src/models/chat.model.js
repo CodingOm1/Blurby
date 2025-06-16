@@ -6,6 +6,7 @@ const DirectChatSchema = new mongoose.Schema({
   lastMessage: { type: String },
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },
+  
 });
 
 const DirectChatModel = mongoose.models.DirectChat || mongoose.model("DirectChat", DirectChatSchema);

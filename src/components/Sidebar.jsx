@@ -6,41 +6,13 @@ import { IoAdd } from "react-icons/io5";
 import Chat from './Chat';
 
 
-export default function Sidebar() {
+export default function Sidebar({chats, setFinderOpen}) {
 
 
-    let chats = [
-        {
-            id: 1,
-            name: "Yamal",
-            lastMessage: "You honey where are you!",
-            isOnline: false,
-            lastTime: "11:05 AM",
-            unread: 1
-        },
-        {
-            id: 2,
-            name: "Ronaldo",
-            lastMessage: "You honey where are you!",
-            lastTime: "12:25 AM",
-            isOnline: false
-        },
-        {
-            id: 3,
-            name: "Messi",
-            lastMessage: "I am coming bro!",
-            lastTime: "11:05 AM",
-            isOnline: true,
-            unread: 2
-        },
-        {
-            id: 4,
-            name: "Neymar",
-            lastMessage: "You honey where are you!",
-            isOnline: false,
-            lastTime: "11/05/2025"
-        },
-    ]
+
+    console.log(chats)
+
+    
 
     return (
         <div className='sidebar w-[30%] h-full  flex flex-col items-center justify-center gap-2'>
@@ -61,7 +33,7 @@ export default function Sidebar() {
                 </div>
 
                 {/* Add Button */}
-                <div className='w-10 h-10 rounded-full bg-purple-700 hover:bg-purple-600 cursor-pointer flex items-center justify-center transition-all'>
+                <div onClick={(e) => {setFinderOpen(true)}} className='w-10 h-10 rounded-full bg-purple-700 hover:bg-purple-600 cursor-pointer flex items-center justify-center transition-all'>
                     <IoAdd className='text-2xl text-white' />
                 </div>
             </div>
@@ -69,11 +41,9 @@ export default function Sidebar() {
             <div className=' bg-[#F6F6F6] w-full h-full shadow-[5px_4px_12px_rgba(0,0,0,0.05)] rounded-l-3xl flex flex-col items-start py-5 overflow-x-hidden overflow-y-scroll relative modern_sc
             ' >
                 {/* <div className='w-full px-5 text-[11px] text-gray-400 font-semibold'>CHATS</div> */}
-                {
-                    chats.map((chat, index) => (
-                        <Chat key={chat.id || index} name={chat.name} lastMessage={chat.lastMessage} lastTime={chat.lastTime} isOnline={chat.isOnline} unread={chat.unread} />
-                    ))
-                }
+                 {chats.map((chat, index) => (
+          <Chat key={chat.chatId || index} name={chat.name} lastMessage={chat.lastMessage} lastTime={chat.lastTime} isOnline={chat.isOnline} unread={chat.unread} />
+        ))}
                 
 
                 <div className="absolute bottom-0 left-0 w-full h-10 bg-gradient-to-t from-white to-transparent z-10 pointer-events-none" />

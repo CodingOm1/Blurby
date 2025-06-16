@@ -2,6 +2,8 @@
 import React, { useState } from 'react'
 import Link from 'next/link'
 import axios from 'axios'
+import SmallLoading from '@/components/ui/SmallLoading'
+import AlertBubble from '@/components/ui/Bubbles'
 
 export default function Page() {
 
@@ -11,12 +13,12 @@ export default function Page() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
+  const [loading, setLoading] = useState(false)
 
 
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-
     if (phone.length != 10) {
       return 0;
     }
@@ -25,6 +27,7 @@ export default function Page() {
       return 0;
     }
 
+    setLoading(true)
     const formData = {
       firstName: firstName,
       lastName: lastName,
@@ -39,8 +42,11 @@ export default function Page() {
       )
       console.log(response.data)
       localStorage.setItem("blurbyToken", response.data.token)
+      setLoading(false)
+      AlertBubble(response.data.message, )
     } catch (error) {
       console.log("Error", error)
+      setLoading(false)
     }
 
   }
@@ -51,6 +57,7 @@ export default function Page() {
 
   return (
     <div className='w-full select-none h-screen flex items-center justify-center bg-[#9696a5] p-4'>
+      
       <div className="signup w-full md:w-[90%] lg:w-[80%] xl:w-[70%] h-full md:h-[90%] bg-[#231d33] rounded-2xl p-5 flex flex-col md:flex-row items-center justify-center gap-5 mod_shadow">
 
         {/* LEFT IMAGE SECTION */}
@@ -92,9 +99,22 @@ export default function Page() {
               <label className="select-none">I agree to the <span className="text-purple-600 font-semibold cursor-pointer hover:underline">Terms & Conditions</span></label>
             </div>
 
-            <button className='w-full -mt-5 cursor-pointer md:-mt-5 py-3 bg-purple-700 rounded-md text-white font-inter hover:bg-purple-600 transition-all'>
-              Create account
-            </button>
+            {loading === true ?
+              <button disabled className='w-full -mt-5 cursor-not-allowed md:-mt-5 py-3 bg-purple-900 rounded-md text-gray-300 font-inter  transition-all flex items-center justify-center gap-5'>
+                <span>
+                  Create account
+                </span>
+                <span className='mt-2 '>
+                  <SmallLoading />
+                </span>
+              </button>
+              :
+              <button className='w-full -mt-5 cursor-pointer md:-mt-5 py-3 bg-purple-700 rounded-md text-white font-inter hover:bg-purple-600 transition-all'>
+                <span>
+                  Create account
+                </span>
+
+              </button>}
           </form>
 
           <p className='px-2 py-4 text-gray-500 font-poppins text-[14px]'>

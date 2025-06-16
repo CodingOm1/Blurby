@@ -4,9 +4,9 @@ import { useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import axios from 'axios';
 
+
 const AuthChecker = () => {
     const pathname = usePathname();
-
     useEffect(() => {
         const CheckToken = async () => {
             const BlurbyToken = localStorage.getItem('blurbyToken');
@@ -35,4 +35,5 @@ const AuthChecker = () => {
     return null; // 👉 it's just a checker, no UI
 };
 
-export default AuthChecker;
+export default AuthChecker
+

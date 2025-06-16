@@ -1,4 +1,12 @@
-// lib/socket.js
 import { io } from 'socket.io-client';
-const socket = io('http://localhost:5000'); // or your deployed URL
-export default socket;
+
+let socket;
+
+export const connectSocket = (userId) => {
+  if (!socket) {
+    socket = io(process.env.NEXT_PUBLIC_SOCKETSERVER, { transports: ['websocket'] });
+    socket.emit('joinRoom', userId);
+  }
+};
+
+export const getSocket = () => socket;
