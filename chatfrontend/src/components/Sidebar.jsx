@@ -6,7 +6,7 @@ import { IoAdd } from "react-icons/io5";
 import Chat from './Chat';
 
 
-export default function Sidebar({chats, setFinderOpen}) {
+export default function Sidebar({chats, setFinderOpen, userId}) {
 
 
 
@@ -29,7 +29,7 @@ export default function Sidebar({chats, setFinderOpen}) {
                         placeholder='Search'
                         className='w-full h-full rounded-full  placeholder:text-gray-400 text-sm outline-none text-black font-poppins'
                     />
-                    <CiSearch className='text-xl text-gray-500 cursor-pointer' />
+                    <CiSearch onClick={() => {setFinderOpen(true)}} className='text-xl text-gray-500 cursor-pointer' />
                 </div>
 
                 {/* Add Button */}

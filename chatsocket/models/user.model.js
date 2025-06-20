@@ -2,6 +2,11 @@ const mongoose = require('mongoose');
 
 
 const userSchema = new mongoose.Schema({
+    profileImg: {
+        type: String,
+        default: '/normaldm.jpg'
+    }
+    ,
     firstName: {
         type: String,
         required: true

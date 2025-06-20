@@ -11,7 +11,7 @@ import NewChat from '@/components/NewChat'
 export default function Page() {
   const [userId, setUserId] = useState('')
   const [chatList, setChatList] = useState([])
-  const [finderOpen, setFinderOpen] = useState(true)
+  const [finderOpen, setFinderOpen] = useState(false)
 
 
 
@@ -73,6 +73,7 @@ export default function Page() {
       console.error('Chat List Error:', err)
     })
 
+    
     return () => {
       socket.off('chat-list')
       socket.off('chat-list-error')
@@ -82,10 +83,10 @@ export default function Page() {
   // ✅ UI
   return (
     <>
-      {finderOpen && <NewChat />}
+      {finderOpen && <NewChat userId={userId} />}
       <div className='w-full h-screen bg-[#EEEEEE] p-5 flex items-center justify-center gap-3'>
         <ActionBar />
-        <Sidebar chats={chatList} setFinderOpen={setFinderOpen} />
+        <Sidebar userIs={userId} chats={chatList} setFinderOpen={setFinderOpen} />
         <Window />
       </div>
     </>
