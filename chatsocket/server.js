@@ -5,7 +5,7 @@ const socketIO = require("socket.io");
 const cors = require("cors");
 const connectDB = require("./config/db");
 const DirectChatModel = require("./models/chat.model");
-const MessageModel = require("./models/message.model")
+const MessageModel = require("./models/message.model");
 const UserModel = require("./models/user.model");
 const mongoose = require("mongoose");
 
@@ -266,20 +266,39 @@ io.on("connection", (socket) => {
     }
   });
 
-  socket.on("get-messages", async (data) => {
-    try {
-      const { chatId, limit = 50, skip = 0 } = data;
+  // Message Change Stream for real-time updates
+  const messageChangeStream = MessageModel.watch([], {
+    fullDocument: "updateLookup",
+  });
 
-      // Validate chat exists
-      const chat = await DirectChatModel.findById(chatId);
+  messageChangeStream.on("change", (change) => {
+    if (change.operationType === "insert") {
+      const newMessage = change.fullDocument;
+
+      // Emit to all participants in the chat room
+      io.to(newMessage.chatId.toString()).emit("new-message", {
+        message: newMessage,
+        chatId: newMessage.chatId,
+      });
+    }
+  });
+
+  // Get initial messages
+  socket.on("get-messages", async ({ chatId, limit = 50, skip = 0 }) => {
+    try {
+      
+      const chat = await DirectChatModel.findOne({
+        _id: chatId,
+      });
+
       if (!chat) {
-        return socket.emit("messages-list", {
+        return socket.emit("messages-error", {
           status: "error",
-          message: "Chat not found",
+          message: "Chat not found or access denied",
         });
       }
 
-      // Fetch messages with pagination, sorted by newest first
+      // Fetch messages with pagination
       const messages = await MessageModel.find({ chatId })
         .sort({ createdAt: -1 }) // Newest first
         .skip(skip)
@@ -296,9 +315,11 @@ io.on("connection", (socket) => {
         chatId,
         hasMore: messages.length === limit,
       });
+
+      // Join the chat room for real-time updates
+      socket.join(chatId.toString());
     } catch (error) {
-      console.error("Error fetching messages:", error);
-      socket.emit("messages-list", {
+      socket.emit("messages-error", {
         status: "error",
         message: "Failed to fetch messages",
       });

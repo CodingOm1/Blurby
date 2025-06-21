@@ -19,55 +19,89 @@ export default function Window({ selectedChat, userId }) {
 
   // Fetch messages when selected chat changes
   useEffect(() => {
-    if (!selectedChat?.chatId) return
+    if (!selectedChat?.chatId) return;
 
     const fetchMessages = async () => {
-      setIsLoading(true)
+      setIsLoading(true);
       try {
         socket.emit('get-messages', {
           chatId: selectedChat.chatId,
           limit: 50,
           skip: 0
-        })
+        });
 
-        console.log(messages)
-        socket.once('messages-list', (response) => {
-          if (response.status === 'success') {
-            setMessages(response.messages)
-            scrollToBottom()
-          }
-          setIsLoading(false)
-        })
-
+        // Change socket.once to socket.on and move outside
       } catch (error) {
-        console.error('Error fetching messages:', error)
-        setIsLoading(false)
+        console.error('Error fetching messages:', error);
+        setIsLoading(false);
       }
-    }
+    };
 
-    fetchMessages()
+    fetchMessages();
+
+    // Add this new variable to track if we've already handled a message
+    const handledMessageIds = new Set();
+
+    const handleMessagesList = (response) => {
+      if (response.status === 'success') {
+        setMessages(response.messages);
+        scrollToBottom();
+        // Store all initial message IDs
+        response.messages.forEach(msg => handledMessageIds.add(msg._id));
+      }
+      setIsLoading(false);
+    };
+
+    const handleNewMessage = (data) => {
+      // Deduplicate messages by checking if we've already handled this ID
+      if (!handledMessageIds.has(data.message._id)) {
+        setMessages(prev => [...prev, data.message]);
+        scrollToBottom();
+        handledMessageIds.add(data.message._id);
+      }
+    };
+
+    const handleTyping = ({ chatId, userId, isTyping }) => {
+      if (chatId === selectedChat.chatId && userId !== selectedChat.userId) {
+        setTypingUsers(prev =>
+          isTyping
+            ? [...new Set([...prev, userId])]
+            : prev.filter(id => id !== userId)
+        );
+      }
+    };
+
+    // Set up all listeners at once
+    socket.on('messages-list', handleMessagesList);
+    socket.on('new-message', handleNewMessage);
+    socket.on('typing', handleTyping);
 
     return () => {
-      socket.off('messages-list')
-    }
-  }, [selectedChat?.chatId])
+      // Clean up all listeners
+      socket.off('messages-list', handleMessagesList);
+      socket.off('new-message', handleNewMessage);
+      socket.off('typing', handleTyping);
+      handledMessageIds.clear();
+    };
+  }, [selectedChat?.chatId]);
+
 
   // Real-time message and typing listeners
   useEffect(() => {
     if (!selectedChat?.chatId) return
 
-    const handleNewMessage = (newMessage) => {
-      if (newMessage.chatId === selectedChat.chatId) {
-        setMessages(prev => [...prev, newMessage])
+    const handleNewMessage = (data) => {
+      // If server emits { chatId, message, sender }
+      if (data.chatId === selectedChat.chatId) {
+        setMessages(prev => [...prev, data.message])
         scrollToBottom()
       }
     }
-
     const handleTyping = ({ chatId, userId, isTyping }) => {
       if (chatId === selectedChat.chatId && userId !== selectedChat.userId) {
-        setTypingUsers(prev => 
-          isTyping 
-            ? [...new Set([...prev, userId])] 
+        setTypingUsers(prev =>
+          isTyping
+            ? [...new Set([...prev, userId])]
             : prev.filter(id => id !== userId)
         )
       }
@@ -157,26 +191,26 @@ export default function Window({ selectedChat, userId }) {
     }, {})
 
     return Object.entries(groupedMessages).map(([date, dayMessages]) => (
-      <React.Fragment key={date}>
-        <SystemMSG msg={date} />
-        {dayMessages.map(msg => (
-          msg.sender._id === selectedChat.userId ? (
-            <MessageBoxTo 
-              key={msg._id}
-              msg={msg.message}
-              time={format(new Date(msg.createdAt), 'h:mm a')}
-            />
-          ) : (
-            <MessageBoxMe
-              key={msg._id}
-              msg={msg.message}
-              time={format(new Date(msg.createdAt), 'h:mm a')}
-              status={msg.status}
-            />
-          )
-        ))}
-      </React.Fragment>
-    ))
+  <React.Fragment key={date}>
+    <SystemMSG msg={date} />
+    {dayMessages.map(msg =>
+      msg.sender._id === userId ? (
+        <MessageBoxMe
+          key={msg._id}
+          msg={msg.message}
+          time={format(new Date(msg.createdAt), 'h:mm a')}
+          status={msg.status}
+        />
+      ) : (
+        <MessageBoxTo
+          key={msg._id}
+          msg={msg.message}
+          time={format(new Date(msg.createdAt), 'h:mm a')}
+        />
+      )
+    )}
+  </React.Fragment>
+))
   }
 
   return (
@@ -235,7 +269,7 @@ export default function Window({ selectedChat, userId }) {
       </div>
 
       {selectedChat && (
-        <MessageBar 
+        <MessageBar
           message={message}
           setMessage={setMessage}
           onSend={handleSendMessage}

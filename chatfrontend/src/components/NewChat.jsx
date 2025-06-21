@@ -112,8 +112,8 @@ export default function NewChat({ userId, setFinderOpen, setSelectedChat }) {
         setIsLoading(false);
       };
 
-      socket.once("chat-created", handleChatCreated);
-      socket.once("error", (err) => {
+      socket.on("chat-created", handleChatCreated);
+      socket.on("error", (err) => {
         setError(err.message || "Error creating chat");
         setIsLoading(false);
       });

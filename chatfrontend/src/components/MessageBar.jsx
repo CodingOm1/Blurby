@@ -4,15 +4,15 @@ import { motion } from 'framer-motion'
 import { FiPaperclip, FiMic, FiSend } from 'react-icons/fi'
 import { BsEmojiSmile } from 'react-icons/bs'
 
-export default function MessageBar({message, setMessage, onSend}) {
+export default function MessageBar({ message, setMessage, onSend }) {
   const [isRecording, setIsRecording] = useState(false)
 
-  
+
   return (
     <div className="w-full px-4 pb-4">
-      <motion.div 
+      <motion.div
         className="flex items-center gap-2 bg-white rounded-xl p-2 shadow-[0_8px_30px_rgba(0,0,0,0.08)]"
-        whileHover={{ 
+        whileHover={{
           boxShadow: '0 8px 40px rgba(0,0,0,0.12)'
         }}
         transition={{ duration: 0.3 }}
@@ -44,16 +44,22 @@ export default function MessageBar({message, setMessage, onSend}) {
 
         {/* Send/Record button */}
         <motion.button
-          
+
           whileTap={{ scale: 0.9 }}
-          className={`p-3 rounded-xl ${
-            message 
-              ? 'bg-purple-600 text-white' 
-              : isRecording 
-                ? 'bg-red-100 text-red-600' 
+          className={`p-3 rounded-xl ${message
+              ? 'bg-purple-600 text-white'
+              : isRecording
+                ? 'bg-red-100 text-red-600'
                 : 'bg-gray-100 text-gray-600'
-          }`}
-          onClick={() => message ? onSend() : setIsRecording(!isRecording)}
+            }`}
+          onClick={() => {
+            if (message) {
+              onSend();
+              setMessage('');
+            } else {
+              setIsRecording(!isRecording);
+            }
+          }}
           animate={{
             scale: isRecording ? [1, 1.05, 1] : 1
           }}
