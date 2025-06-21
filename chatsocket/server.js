@@ -6,13 +6,14 @@ const cors = require("cors");
 const connectDB = require("./config/db");
 const DirectChatModel = require("./models/chat.model");
 const UserModel = require("./models/user.model");
+const mongoose = require("mongoose");
 
 // Setup
 const app = express();
 const server = http.createServer(app);
 const io = socketIO(server, {
   cors: {
-    origin: process.env.FRONTEND_URL, // Next.js frontend URL
+    origin: process.env.FRONTEND_URL,
     methods: ["GET", "POST"],
   },
 });
@@ -20,78 +21,172 @@ const io = socketIO(server, {
 app.use(cors());
 connectDB();
 
-// Listen socket
+// Helper function to validate IDs
+const isValidId = (id) => mongoose.Types.ObjectId.isValid(id);
+
 io.on("connection", (socket) => {
   console.log("✅ Client Connected: " + socket.id);
 
-  // MongoDB Change Stream - Real Time Updates
+  // MongoDB Change Stream
   const chatChangeStream = DirectChatModel.watch();
-
   chatChangeStream.on("change", (change) => {
-    console.log("📡 Change detected:", change);
-
     if (change.operationType === "insert") {
       socket.emit("new-chat", {
-        time: new Date().toISOString(),
+        status: "success",
         chat: change.fullDocument,
       });
     }
   });
 
-  // Optional: Polling (You can remove this if using only Change Streams)
+  // Polling interval
   const interval = setInterval(async () => {
     try {
       const ChatList = await DirectChatModel.find();
+      const users = [...new Set(ChatList.flatMap((chat) => chat.members))];
 
-      const users = ChatList.flatMap((chat) => chat.members);
-
-      // Fetch user details in parallel
       const userDetails = await Promise.all(
         users.map(async (userId) => {
+          if (!isValidId(userId)) return null;
           const user = await UserModel.findById(userId).select(
             "_id profileImg firstName lastName"
-          ); // Only id & name
+          );
           return user;
         })
       );
 
       socket.emit("chat-list", {
-        time: new Date().toISOString(),
+        status: "success",
         chats: ChatList,
-        users: userDetails, // ✅ Send names & ids
+        users: userDetails.filter((user) => user !== null),
       });
     } catch (error) {
-      console.error("❌ Error fetching chat list:", error.message);
-      socket.emit("chat-list-error", { error: "Failed to fetch chat list" });
+      console.error("Error fetching chat list:", error);
+      socket.emit("chat-list-error", {
+        status: "error",
+        message: "Failed to fetch chat list",
+      });
     }
   }, 150);
 
+  // Find user by phone
   socket.on("find-user-with-phone", async (data) => {
-    const { userId, phone } = data;
-
     try {
-      const isAuth = await UserModel.findById(userId)
-      if (!isAuth) {
-        socket.emit("User is not authenticated to create new chat!")
+      const { userId, phone } = data;
+
+      if (!isValidId(userId)) {
+        return socket.emit("user-found", {
+          status: "error",
+          message: "Invalid user ID",
+        });
       }
-      const user = await UserModel.findOne({phone})
-      
-    if (user) {
-      socket.emit("user-found", user);
-    } else {
-      socket.emit("user-not-found", { message: "User not found" });
-    }
+
+      if (!phone || phone.length !== 10) {
+        return socket.emit("user-found", {
+          status: "error",
+          message: "Invalid phone number",
+        });
+      }
+
+      const authUser = await UserModel.findById(userId);
+      if (!authUser) {
+        return socket.emit("user-found", {
+          status: "error",
+          message: "User not authenticated",
+        });
+      }
+
+      const user = await UserModel.findOne({ phone }).select(
+        "_id profileImg firstName lastName phone"
+      );
+      if (!user) {
+        return socket.emit("user-found", {
+          status: "error",
+          message: "User not found",
+        });
+      }
+
+      socket.emit("user-found", {
+        status: "success",
+        user,
+      });
     } catch (error) {
-      console.log("Failed to search: ", error);
-      socket.emit("Error");
+      socket.emit("user-found", {
+        status: "error",
+        message: "Failed to search user",
+      });
     }
   });
 
-  // On disconnect
+  // Create new chat
+  socket.on("create-new-chat", async (data) => {
+    try {
+      const { userId, newUserId } = data;
+
+      if (!isValidId(userId) || !isValidId(newUserId)) {
+        return socket.emit("chat-created", {
+          status: "error",
+          message: "Invalid user IDs",
+        });
+      }
+
+      if (userId === newUserId) {
+        return socket.emit("chat-created", {
+          status: "error",
+          message: "Cannot create chat with yourself",
+        });
+      }
+
+      const [authUser, targetUser] = await Promise.all([
+        UserModel.findById(userId),
+        UserModel.findById(newUserId).select(
+          "_id profileImg firstName lastName"
+        ),
+      ]);
+
+      if (!authUser || !targetUser) {
+        return socket.emit("chat-created", {
+          status: "error",
+          message: "One or both users not found",
+        });
+      }
+
+      // Changed to strictly check for 2-member chats only
+      const existingChat = await DirectChatModel.findOne({
+        members: { $all: [userId, newUserId], $size: 2 },
+      });
+
+      if (existingChat) {
+        return socket.emit("chat-created", {
+          status: "success",
+          chat: existingChat,
+          targetUser: targetUser, // Only send target user info
+          message: "Chat already exists",
+        });
+      }
+
+      const newChat = await DirectChatModel.create({
+        members: [userId, newUserId],
+      });
+
+      // Only send target user info, not auth user
+      socket.emit("chat-created", {
+        status: "success",
+        chat: newChat,
+        targetUser: targetUser,
+      });
+    } catch (error) {
+      socket.emit("chat-created", {
+        status: "error",
+        message: "Failed to create chat",
+      });
+    }
+  });
+
+  // Disconnect
   socket.on("disconnect", () => {
     console.log("❌ Client Disconnected: " + socket.id);
-    clearInterval(interval); // Clear interval to save memory
-    chatChangeStream.close(); // Close change stream safely
+    clearInterval(interval);
+    chatChangeStream.close();
   });
 });
 

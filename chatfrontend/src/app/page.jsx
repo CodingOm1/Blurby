@@ -3,6 +3,8 @@ import Navbar from "@/components/Navbar";
 import React, { useEffect } from "react";
 import Link from "next/link";
 import AuthChecker from "../../middleware";
+import AlertBubble from "@/components/ui/Bubbles";
+
 
 export default function Page() {
 
@@ -15,8 +17,9 @@ export default function Page() {
   return (
     <div className="w-full min-h-screen bg-white">
       <Navbar />
+      <AlertBubble />
       <section id="home" className="w-full min-h-screen bg-gray-100">
-        <div className="w-full min-h-screen bg-white relative overflow-hidden rounded-none md:rounded-3xl">
+        <div className="w-full min-h-screen bg-white relative overflow-hidden rounded-none ">
 
           {/* 🌈 Blobs */}
           <div className="absolute  w-[250px] h-[250px] md:w-[400px] md:h-[400px] rounded-full bg-purple-500 opacity-30 blur-3xl top-[-100px] left-[-100px] animate-pulse z-0"></div>

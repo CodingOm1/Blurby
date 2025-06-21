@@ -12,6 +12,7 @@ export default function Page() {
   const [userId, setUserId] = useState('')
   const [chatList, setChatList] = useState([])
   const [finderOpen, setFinderOpen] = useState(false)
+  const [selectedChat, setSelectedChat] = useState(null)
 
 
 
@@ -57,7 +58,8 @@ export default function Page() {
 
         return {
           chatId: chat._id,
-          name: opponent?.firstName || 'Unknown',
+          firstName: opponent?.firstName || 'Unknown',
+          lastName: opponent?.lastName || 'Unknown',
           userId: opponent?._id,
           lastMessage: chat.lastMessage || '',
           lastTime: chat.lastTime || '',
@@ -80,14 +82,15 @@ export default function Page() {
     }
   }, [userId])
 
+  
   // ✅ UI
   return (
     <>
-      {finderOpen && <NewChat userId={userId} />}
+      {finderOpen && <NewChat userId={userId} setFinderOpen={setFinderOpen} setSelectedChat={setSelectedChat} />}
       <div className='w-full h-screen bg-[#EEEEEE] p-5 flex items-center justify-center gap-3'>
         <ActionBar />
-        <Sidebar userIs={userId} chats={chatList} setFinderOpen={setFinderOpen} />
-        <Window />
+        <Sidebar setSelectedChat={setSelectedChat} userIs={userId} chats={chatList} setFinderOpen={setFinderOpen} />
+        <Window selectedChat={selectedChat} setSelectedChat={setSelectedChat} />
       </div>
     </>
   )

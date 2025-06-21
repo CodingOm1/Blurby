@@ -133,7 +133,6 @@ input.md_input:focus {
   height: 0.5em;
 }
 
-
 .spinner .spinner-blade {
   position: absolute;
   left: 0.4629em;
@@ -252,4 +251,32 @@ input.md_input:focus {
   100% {
     background-color: transparent;
   }
+}
+
+.message-area::-webkit-scrollbar {
+  width: 6px;
+}
+.message-area::-webkit-scrollbar-track {
+  background: transparent;
+}
+.message-area::-webkit-scrollbar-thumb {
+  background: rgba(156, 163, 175, 0.3);
+  border-radius: 3px;
+}
+.message-area::-webkit-scrollbar-thumb:hover {
+  background: rgba(156, 163, 175, 0.5);
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.animate-fade-in {
+  animation: fade-in 0.3s ease-out;
 }

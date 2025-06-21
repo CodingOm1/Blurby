@@ -6,13 +6,14 @@ import { IoAdd } from "react-icons/io5";
 import Chat from './Chat';
 
 
-export default function Sidebar({chats, setFinderOpen, userId}) {
+export default function Sidebar({ chats, setFinderOpen, userId, setSelectedChat }) {
 
 
 
     console.log(chats)
 
-    
+
+
 
     return (
         <div className='sidebar w-[30%] h-full  flex flex-col items-center justify-center gap-2'>
@@ -29,11 +30,11 @@ export default function Sidebar({chats, setFinderOpen, userId}) {
                         placeholder='Search'
                         className='w-full h-full rounded-full  placeholder:text-gray-400 text-sm outline-none text-black font-poppins'
                     />
-                    <CiSearch onClick={() => {setFinderOpen(true)}} className='text-xl text-gray-500 cursor-pointer' />
+                    <CiSearch onClick={() => { setFinderOpen(true) }} className='text-xl text-gray-500 cursor-pointer' />
                 </div>
 
                 {/* Add Button */}
-                <div onClick={(e) => {setFinderOpen(true)}} className='w-10 h-10 rounded-full bg-purple-700 hover:bg-purple-600 cursor-pointer flex items-center justify-center transition-all'>
+                <div onClick={(e) => { setFinderOpen(true) }} className='w-10 h-10 rounded-full bg-purple-700 hover:bg-purple-600 cursor-pointer flex items-center justify-center transition-all'>
                     <IoAdd className='text-2xl text-white' />
                 </div>
             </div>
@@ -41,10 +42,10 @@ export default function Sidebar({chats, setFinderOpen, userId}) {
             <div className=' bg-[#F6F6F6] w-full h-full shadow-[5px_4px_12px_rgba(0,0,0,0.05)] rounded-l-3xl flex flex-col items-start py-5 overflow-x-hidden overflow-y-scroll relative modern_sc
             ' >
                 {/* <div className='w-full px-5 text-[11px] text-gray-400 font-semibold'>CHATS</div> */}
-                 {chats.map((chat, index) => (
-          <Chat key={chat.chatId || index} name={chat.name} lastMessage={chat.lastMessage} lastTime={chat.lastTime} isOnline={chat.isOnline} unread={chat.unread} />
-        ))}
-                
+                {chats.map((chat, index) => (
+                    <Chat setSelectedChat={setSelectedChat} mainInfo={chat}  key={chat.chatId || index} name={chat.firstName} lastMessage={chat.lastMessage} lastTime={chat.lastTime} isOnline={chat.isOnline} unread={chat.unread} />
+                ))}
+
 
                 <div className="absolute bottom-0 left-0 w-full h-10 bg-gradient-to-t from-white to-transparent z-10 pointer-events-none" />
             </div>
