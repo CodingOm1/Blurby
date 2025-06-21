@@ -5,6 +5,7 @@ const socketIO = require("socket.io");
 const cors = require("cors");
 const connectDB = require("./config/db");
 const DirectChatModel = require("./models/chat.model");
+const MessageModel = require("./models/message.model")
 const UserModel = require("./models/user.model");
 const mongoose = require("mongoose");
 
@@ -182,7 +183,127 @@ io.on("connection", (socket) => {
     }
   });
 
-  
+  socket.on("send-message", async (data) => {
+    try {
+      const { senderId, chatId, message, chatModel } = data;
+
+      const sender = await UserModel.findById(senderId);
+      if (!sender) {
+        return socket.emit("msg-send-error", {
+          status: "error",
+          message: "Invalid sender ID",
+        });
+      }
+
+      let chat;
+      if (chatModel === "DirectChat") {
+        chat = await DirectChatModel.findOne({
+          _id: chatId,
+          members: senderId, // Ensure sender is in chat
+        });
+      } else if (chatModel === "GroupChat") {
+        chat = await GroupChatModel.findOne({
+          _id: chatId,
+          members: senderId,
+        });
+      }
+
+      if (!chat) {
+        return socket.emit("msg-send-error", {
+          status: "error",
+          message: "Chat not found or access denied",
+        });
+      }
+
+      const newMessage = await MessageModel.create({
+        chatId,
+        chatModel,
+        sender: senderId,
+        message,
+        msgType: "Personal",
+      });
+
+      if (chatModel === "DirectChat") {
+        await DirectChatModel.findByIdAndUpdate(chatId, {
+          lastMessage: message,
+          updatedAt: new Date(),
+        });
+      } else {
+        await GroupChatModel.findByIdAndUpdate(chatId, {
+          lastMessage: `${sender.firstName}: ${message}`,
+          updatedAt: new Date(),
+        });
+      }
+
+      const recipients = chat.members.filter(
+        (member) => member.toString() !== senderId.toString()
+      );
+
+      // Emit to sender (confirmation)
+      socket.emit("message-sent", {
+        status: "success",
+        message: newMessage,
+      });
+
+      // Emit to all recipients
+      recipients.forEach((userId) => {
+        io.to(userId.toString()).emit("new-message", {
+          chatId,
+          message: newMessage,
+          sender: {
+            _id: sender._id,
+            firstName: sender.firstName,
+            lastName: sender.lastName,
+            profileImg: sender.profileImg,
+          },
+        });
+      });
+    } catch (error) {
+      socket.emit("msg-send-error", {
+        status: "error",
+        message: "Failed to create chat",
+      });
+    }
+  });
+
+  socket.on("get-messages", async (data) => {
+    try {
+      const { chatId, limit = 50, skip = 0 } = data;
+
+      // Validate chat exists
+      const chat = await DirectChatModel.findById(chatId);
+      if (!chat) {
+        return socket.emit("messages-list", {
+          status: "error",
+          message: "Chat not found",
+        });
+      }
+
+      // Fetch messages with pagination, sorted by newest first
+      const messages = await MessageModel.find({ chatId })
+        .sort({ createdAt: -1 }) // Newest first
+        .skip(skip)
+        .limit(limit)
+        .populate("sender", "_id firstName lastName profileImg")
+        .lean();
+
+      // Reverse to show oldest first in UI
+      const orderedMessages = messages.reverse();
+
+      socket.emit("messages-list", {
+        status: "success",
+        messages: orderedMessages,
+        chatId,
+        hasMore: messages.length === limit,
+      });
+    } catch (error) {
+      console.error("Error fetching messages:", error);
+      socket.emit("messages-list", {
+        status: "error",
+        message: "Failed to fetch messages",
+      });
+    }
+  });
   // Disconnect
   socket.on("disconnect", () => {
     console.log("❌ Client Disconnected: " + socket.id);

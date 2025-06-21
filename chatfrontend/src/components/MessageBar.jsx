@@ -4,10 +4,10 @@ import { motion } from 'framer-motion'
 import { FiPaperclip, FiMic, FiSend } from 'react-icons/fi'
 import { BsEmojiSmile } from 'react-icons/bs'
 
-export default function MessageBar() {
-  const [message, setMessage] = useState('')
+export default function MessageBar({message, setMessage, onSend}) {
   const [isRecording, setIsRecording] = useState(false)
 
+  
   return (
     <div className="w-full px-4 pb-4">
       <motion.div 
@@ -44,6 +44,7 @@ export default function MessageBar() {
 
         {/* Send/Record button */}
         <motion.button
+          
           whileTap={{ scale: 0.9 }}
           className={`p-3 rounded-xl ${
             message 
@@ -52,7 +53,7 @@ export default function MessageBar() {
                 ? 'bg-red-100 text-red-600' 
                 : 'bg-gray-100 text-gray-600'
           }`}
-          onClick={() => message ? setMessage('') : setIsRecording(!isRecording)}
+          onClick={() => message ? onSend() : setIsRecording(!isRecording)}
           animate={{
             scale: isRecording ? [1, 1.05, 1] : 1
           }}

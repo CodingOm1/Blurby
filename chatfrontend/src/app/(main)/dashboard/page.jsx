@@ -15,6 +15,8 @@ export default function Page() {
   const [selectedChat, setSelectedChat] = useState(null)
 
 
+  const [Message, setMessage] = useState(null)
+
 
   // ✅ Step 1: Token Checker
   const CheckToken = async () => {
@@ -90,7 +92,7 @@ export default function Page() {
       <div className='w-full h-screen bg-[#EEEEEE] p-5 flex items-center justify-center gap-3'>
         <ActionBar />
         <Sidebar setSelectedChat={setSelectedChat} userIs={userId} chats={chatList} setFinderOpen={setFinderOpen} />
-        <Window selectedChat={selectedChat} setSelectedChat={setSelectedChat} />
+        <Window userId={userId} setMessage={setMessage} Message={Message} selectedChat={selectedChat} setSelectedChat={setSelectedChat} />
       </div>
     </>
   )

@@ -6,6 +6,7 @@ const MessageSchema = new mongoose.Schema({
     chatModel: { type: String, enum: ['DirectChat', 'GroupChat'], required: true }, // To identify type
     sender: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     message: { type: String, required: true },
+    msgType: {type: String, enum: ['System', 'Personal'], default: 'Personal'},
     createdAt: { type: Date, default: Date.now },
     readBy: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }] // Who has read this
 });
