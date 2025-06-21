@@ -2,10 +2,12 @@
 import React, { useState, useEffect } from 'react'
 import { HiMenu, HiX } from 'react-icons/hi'
 import Link from 'next/link'
+import { motion, AnimatePresence } from 'framer-motion'
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
+  const [hoveredItem, setHoveredItem] = useState(null)
 
   useEffect(() => {
     const handleScroll = () => {
@@ -15,95 +17,180 @@ export default function Navbar() {
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
+  const navItems = [
+    { name: 'Home', path: '/' },
+    { name: 'About', path: '/about' },
+    { name: 'Pricing', path: '/pricing' }
+  ]
+
   return (
-    <div className={`w-full px-4 sm:px-6 md:px-8 lg:px-12 py-3 fixed top-0 left-0 z-50 
-      bg-[#ffffffcc] backdrop-blur-[20px] shadow-sm transition-all duration-300
-      ${scrolled ? 'shadow-[#00000010]' : 'shadow-transparent'}`}>
-      
+    <motion.div 
+      initial={{ y: -20, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      transition={{ duration: 0.5, ease: [0.25, 1, 0.5, 1] }}
+      className={`w-full px-4 sm:px-6 md:px-8 lg:px-12 py-3 fixed top-0 left-0 z-50 
+        bg-[rgba(255,255,255,0.8)] backdrop-blur-[24px] shadow-sm transition-all duration-500
+        ${scrolled ? 'shadow-[0_1px_20px_rgba(0,0,0,0.05)]' : 'shadow-transparent'}
+        border-b border-[rgba(255,255,255,0.18)]`}
+    >
       <div className="max-w-7xl mx-auto flex items-center justify-between">
-        {/* Logo */}
+        {/* Logo with subtle scale animation */}
         <Link href="/" className="logo flex items-center gap-2 z-50">
-          <img src="/blurby.png" width={36} height={36} alt="Blurby Logo" 
-               className="w-9 h-9 object-contain" />
-          <h2 className='font-sora text-[#192144] text-xl sm:text-2xl font-bold'>Blurby</h2>
+          <motion.img 
+            src="/blurby.png" 
+            width={36} 
+            height={36} 
+            alt="Blurby Logo"
+            className="w-9 h-9 object-contain"
+            whileHover={{ scale: 1.05 }}
+            transition={{ type: 'spring', stiffness: 400, damping: 10 }}
+          />
+          <motion.h2 
+            className='font-sora text-[#192144] text-xl sm:text-2xl font-bold'
+            whileHover={{ scale: 1.02 }}
+            transition={{ type: 'spring', stiffness: 400, damping: 10 }}
+          >
+            Blurby
+          </motion.h2>
         </Link>
 
-        {/* Desktop Nav */}
+        {/* Desktop Nav with liquid hover effect */}
         <ul className="hidden md:flex items-center gap-6 lg:gap-8 font-inter list-none">
-          <li className='group relative'>
-            <Link href="/" className='text-sm lg:text-base text-[#192144] hover:text-[#192144cc] transition-colors'>
-              Home
-              <span className="absolute bottom-0 left-0 w-0 h-px bg-[#192144] group-hover:w-full transition-all duration-300"></span>
-            </Link>
-          </li>
-          <li className='group relative'>
-            <Link href="/about" className='text-sm lg:text-base text-[#192144] hover:text-[#192144cc] transition-colors'>
-              About
-              <span className="absolute bottom-0 left-0 w-0 h-px bg-[#192144] group-hover:w-full transition-all duration-300"></span>
-            </Link>
-          </li>
-          <li className='group relative'>
-            <Link href="/pricing" className='text-sm lg:text-base text-[#192144] hover:text-[#192144cc] transition-colors'>
-              Pricing
-              <span className="absolute bottom-0 left-0 w-0 h-px bg-[#192144] group-hover:w-full transition-all duration-300"></span>
-            </Link>
-          </li>
+          {navItems.map((item) => (
+            <motion.li 
+              key={item.name}
+              className='relative'
+              onHoverStart={() => setHoveredItem(item.name)}
+              onHoverEnd={() => setHoveredItem(null)}
+            >
+              <Link 
+                href={item.path} 
+                className='text-sm lg:text-base text-[#192144] relative z-10 px-2 py-1'
+              >
+                {item.name}
+              </Link>
+              
+              {/* Liquid highlight effect */}
+              {hoveredItem === item.name && (
+                <motion.div
+                  layoutId="navHighlight"
+                  className="absolute inset-0 bg-[rgba(25,33,68,0.1)] rounded-lg"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+                />
+              )}
+            </motion.li>
+          ))}
         </ul>
 
-        {/* Desktop Button */}
+        {/* Desktop Button with floating effect */}
         <div className="hidden md:flex items-center gap-4">
           <Link href="/auth/login">
-            <button className='py-2 px-6 bg-[#192144] text-white font-medium rounded-full 
-              hover:bg-[#192144e1] transition-all text-sm lg:text-base
-              hover:shadow-[0_4px_12px_rgba(25,33,68,0.15)]'>
-              Login
-            </button>
+            <motion.button 
+              className='py-2 px-6 bg-[#192144] text-white font-medium rounded-full relative overflow-hidden'
+              whileHover={{ y: -2 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              <span className="relative z-10">Login</span>
+              {/* Liquid shine effect */}
+              <motion.span
+                className="absolute inset-0 bg-gradient-to-r from-[rgba(255,255,255,0.1)] to-transparent opacity-0"
+                animate={{ 
+                  opacity: [0, 0.3, 0],
+                  x: ['-100%', '100%']
+                }}
+                transition={{ 
+                  duration: 1.5,
+                  repeat: Infinity,
+                  ease: 'linear'
+                }}
+              />
+            </motion.button>
           </Link>
         </div>
 
-        {/* Mobile Menu Toggle */}
-        <div className="md:hidden z-50">
+        {/* Mobile Menu Toggle with spring animation */}
+        <motion.div 
+          className="md:hidden z-50"
+          whileTap={{ scale: 0.9 }}
+        >
           {isOpen ? (
-            <HiX onClick={() => setIsOpen(false)} className="w-6 h-6 cursor-pointer text-[#192144]" />
+            <HiX 
+              onClick={() => setIsOpen(false)} 
+              className="w-6 h-6 cursor-pointer text-[#192144]"
+            />
           ) : (
-            <HiMenu onClick={() => setIsOpen(true)} className="w-6 h-6 cursor-pointer text-[#192144]" />
+            <HiMenu 
+              onClick={() => setIsOpen(true)} 
+              className="w-6 h-6 cursor-pointer text-[#192144]"
+            />
           )}
-        </div>
+        </motion.div>
       </div>
 
-      {/* Mobile Menu */}
-      <div className={`md:hidden fixed inset-0 bg-[#ffffffcc] backdrop-blur-[20px] z-40 
-        transition-all duration-300 ease-in-out ${isOpen ? 'translate-y-0' : '-translate-y-full'}`}
-        style={{ paddingTop: '5rem' }}>
-        
-        <div className="container mx-auto px-6 py-4 flex flex-col items-center gap-8">
-          <ul className="w-full flex flex-col items-center gap-6 font-inter">
-            <li className='w-full text-center border-b border-[#00000010] pb-4'>
-              <Link href="/" className='text-lg text-[#192144] font-medium' onClick={() => setIsOpen(false)}>
-                Home
+      {/* Mobile Menu with smooth sheet animation */}
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div 
+            className="md:hidden fixed inset-0 bg-[rgba(255,255,255,0.85)] backdrop-blur-[24px] z-40"
+            initial={{ y: '-100%' }}
+            animate={{ y: 0 }}
+            exit={{ y: '-100%' }}
+            transition={{ duration: 0.5, ease: [0.25, 1, 0.5, 1] }}
+            style={{ paddingTop: '5rem' }}
+          >
+            <div className="container mx-auto px-6 py-4 flex flex-col items-center gap-8">
+              <ul className="w-full flex flex-col items-center gap-6 font-inter">
+                {navItems.map((item) => (
+                  <motion.li 
+                    key={item.name}
+                    className='w-full text-center border-b border-[rgba(0,0,0,0.05)] pb-4'
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <Link 
+                      href={item.path} 
+                      className='text-lg text-[#192144] font-medium'
+                      onClick={() => setIsOpen(false)}
+                    >
+                      {item.name}
+                    </Link>
+                  </motion.li>
+                ))}
+              </ul>
+              
+              <Link href="/auth/login" className='w-full max-w-xs'>
+                <motion.button
+                  className='w-full py-3 px-6 bg-[#192144] text-white font-medium rounded-full relative overflow-hidden'
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3, delay: 0.1 }}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => setIsOpen(false)}
+                >
+                  <span className="relative z-10">Login</span>
+                  {/* Liquid shine effect */}
+                  <motion.span
+                    className="absolute inset-0 bg-gradient-to-r from-[rgba(255,255,255,0.1)] to-transparent opacity-0"
+                    animate={{ 
+                      opacity: [0, 0.3, 0],
+                      x: ['-100%', '100%']
+                    }}
+                    transition={{ 
+                      duration: 1.5,
+                      repeat: Infinity,
+                      ease: 'linear'
+                    }}
+                  />
+                </motion.button>
               </Link>
-            </li>
-            <li className='w-full text-center border-b border-[#00000010] pb-4'>
-              <Link href="/about" className='text-lg text-[#192144] font-medium' onClick={() => setIsOpen(false)}>
-                About
-              </Link>
-            </li>
-            <li className='w-full text-center border-b border-[#00000010] pb-4'>
-              <Link href="/pricing" className='text-lg text-[#192144] font-medium' onClick={() => setIsOpen(false)}>
-                Pricing
-              </Link>
-            </li>
-          </ul>
-          
-          <Link href="/auth/login" className='w-full max-w-xs'>
-            <button className='w-full py-3 px-6 bg-[#192144] text-white font-medium rounded-full 
-              hover:bg-[#192144e1] transition-all text-base mt-4'
-              onClick={() => setIsOpen(false)}>
-              Login
-            </button>
-          </Link>
-        </div>
-      </div>
-    </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
   )
 }

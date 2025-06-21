@@ -1,13 +1,17 @@
 'use client'
 import React from 'react'
 import MessageBar from './MessageBar'
+import SystemMSG from './ui/SystemMSG'
+import MessageBoxTo from './ui/MessageBoxTo'
+import MessageBoxMe from './ui/MessageBoxMe'
+import TypingIndicator from './TypingIndicator'
 
 
 export default function Window({ selectedChat }) {
   return (
     <div className='window w-[70%] h-full flex flex-col items-center justify-center gap-2'>
       {/* Chat container with subtle texture */}
-      <div className={`w-full h-[90%] ${!selectedChat ? 'bg-[#f6f6f6]' : 'bg-[#fff]'} rounded-t-3xl overflow-hidden shadow-[0_25px_50px_-12px_rgba(0,0,0,0.08)] relative`}>
+      <div className={`w-full h-[90%] ${!selectedChat ? 'bg-[#f6f6f6]' : 'bg-[#fdeaff]'} rounded-t-3xl overflow-hidden shadow-[0_25px_50px_-12px_rgba(0,0,0,0.08)] relative`}>
         {/* Premium header with status */}
         {
           !selectedChat
@@ -53,86 +57,27 @@ export default function Window({ selectedChat }) {
               <div className='w-full h-[calc(100%-80px)] p-6 overflow-y-auto bg-gradient-to-b from-white to-gray-50/30'>
 
 
-                <div className='flex justify-center mb-6'>
-                  <div className='px-3 py-1 bg-gray-100 rounded-full shadow-inner'>
-                    <span className='text-xs font-medium text-gray-500'>TODAY</span>
-                  </div>
-                </div>
+                <SystemMSG msg={'TODAY'} />
 
-                <div className='flex mb-6 group'>
-                  <div className='max-w-[75%] px-4 py-3 bg-gray-50 rounded-3xl rounded-tl-none shadow-sm border border-gray-100 relative'>
-                    <div className='absolute -left-1.5 top-0 w-3 h-3 overflow-hidden'>
-                      <div className='w-full h-full bg-gray-50 border-l border-t border-gray-100 transform rotate-45 origin-bottom-right'></div>
-                    </div>
-                    <p className='text-gray-800 font-medium'>Hey! Just finished the designs for our project</p>
-                    <p className='text-xs text-gray-400 mt-1 flex items-center gap-1'>
-                      10:30 AM
-                      <span className='text-gray-300 group-hover:opacity-100 opacity-0 transition-opacity'>
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
-                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                        </svg>
-                      </span>
-                    </p>
-                  </div>
-                </div>
+                <MessageBoxTo msg={'Hey Hi How are you'} time={'10:30 AM'} />
 
-                <div className='flex mb-6 justify-end group'>
-                  <div className='max-w-[75%] px-4 py-3 bg-gradient-to-r from-purple-600 to-indigo-500 text-white rounded-3xl rounded-tr-none shadow-lg relative'>
-                    <div className='absolute -right-1.5 top-0 w-3 h-3 overflow-hidden'>
-                      <div className='w-full h-full bg-indigo-500 transform rotate-45 origin-bottom-left'></div>
-                    </div>
-                    <p className='font-medium'>That's awesome! The color scheme looks perfect</p>
-                    <p className='text-xs text-purple-100 mt-1 flex items-center gap-1 justify-end'>
-                      10:32 AM
-                      <span className='text-purple-200 group-hover:opacity-100 opacity-0 transition-opacity'>
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
-                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                        </svg>
-                      </span>
-                    </p>
-                  </div>
-                </div>
+                <MessageBoxMe msg={'I am fine bro!, how about you'} time={'10:41 AM'} />
+                <MessageBoxMe msg={'When can we schedule the next review?'} time={'10:41 AM'} />
 
-                <div className='flex mb-2 justify-end group'>
-                  <div className='max-w-[75%] px-4 py-3 bg-gradient-to-r from-purple-600 to-indigo-500 text-white rounded-3xl rounded-tr-none shadow-lg relative'>
-                    <div className='absolute -right-1.5 top-0 w-3 h-3 overflow-hidden'>
-                      <div className='w-full h-full bg-indigo-500 transform rotate-45 origin-bottom-left'></div>
-                    </div>
-                    <p className='font-medium'>When can we schedule the next review?</p>
-                    <p className='text-xs text-purple-100 mt-1 flex items-center gap-1 justify-end'>
-                      10:33 AM
-                      <span className='text-purple-200 opacity-100'>
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
-                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                        </svg>
-                      </span>
-                    </p>
-                  </div>
-                </div>
-                <div className='flex justify-end mb-6'>
+
+                {/* <div className='flex justify-end mb-6'>
                   <div className='flex items-center gap-1'>
                     <span className='text-xs text-gray-400 font-medium'>Read</span>
                     <div className='flex -space-x-1'>
                       <img className='w-4 h-4 rounded-full border border-white' src="/blurby.png" alt="Read by" />
                     </div>
                   </div>
-                </div>
+                </div> */}
 
-                <div className='flex mb-6'>
-                  <div className='max-w-[75%] px-4 py-3 bg-gray-50 rounded-3xl rounded-tl-none shadow-sm border border-gray-100 relative'>
-                    <div className='absolute -left-1.5 top-0 w-3 h-3 overflow-hidden'>
-                      <div className='w-full h-full bg-gray-50 border-l border-t border-gray-100 transform rotate-45 origin-bottom-right'></div>
-                    </div>
-                    <div className='flex space-x-1 items-end'>
-                      <div className='typing-indicator'>
-                        <div className='dot'></div>
-                        <div className='dot'></div>
-                        <div className='dot'></div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div></>
+                <TypingIndicator />
+              </div>
+              
+              </>
         }
 
 
