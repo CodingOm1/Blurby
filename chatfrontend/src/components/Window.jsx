@@ -7,156 +7,127 @@ import SystemMSG from './ui/SystemMSG'
 import MessageBoxTo from './ui/MessageBoxTo'
 import MessageBoxMe from './ui/MessageBoxMe'
 import TypingIndicator from './TypingIndicator'
+import { motion, AnimatePresence } from 'framer-motion'
 
 export default function Window({ selectedChat, userId }) {
   const [messages, setMessages] = useState([])
   const [isLoading, setIsLoading] = useState(false)
-  const [isTyping, setIsTyping] = useState(false)
   const [typingUsers, setTypingUsers] = useState([])
   const [message, setMessage] = useState('')
   const messagesEndRef = useRef(null)
   const socket = getSocket()
 
-  // Fetch messages when selected chat changes
+  // Unified message handling
   useEffect(() => {
-    if (!selectedChat?.chatId) return;
+    if (!selectedChat?.chatId) return
 
     const fetchMessages = async () => {
-      setIsLoading(true);
+      setIsLoading(true)
       try {
         socket.emit('get-messages', {
           chatId: selectedChat.chatId,
           limit: 50,
           skip: 0
-        });
-
-        // Change socket.once to socket.on and move outside
+        })
       } catch (error) {
-        console.error('Error fetching messages:', error);
-        setIsLoading(false);
+        console.error('Error fetching messages:', error)
+        setIsLoading(false)
       }
-    };
+    }
 
-    fetchMessages();
+    setInterval(() => {
+      fetchMessages()
+    }, 50);
 
-    // Add this new variable to track if we've already handled a message
-    const handledMessageIds = new Set();
 
     const handleMessagesList = (response) => {
       if (response.status === 'success') {
-        setMessages(response.messages);
-        scrollToBottom();
-        // Store all initial message IDs
-        response.messages.forEach(msg => handledMessageIds.add(msg._id));
+        setMessages(response.messages)
+        scrollToBottom()
       }
-      setIsLoading(false);
-    };
+      setIsLoading(false)
+    }
 
     const handleNewMessage = (data) => {
-      // Deduplicate messages by checking if we've already handled this ID
-      if (!handledMessageIds.has(data.message._id)) {
-        setMessages(prev => [...prev, data.message]);
-        scrollToBottom();
-        handledMessageIds.add(data.message._id);
-      }
-    };
+      if (data.chatId !== selectedChat.chatId) return
 
-    const handleTyping = ({ chatId, userId, isTyping }) => {
-      if (chatId === selectedChat.chatId && userId !== selectedChat.userId) {
+      setMessages(prev => {
+        // Replace temp message if exists
+        if (data.tempId) {
+          return prev.map(msg =>
+            msg.tempId === data.tempId ? { ...data.message, status: 'sent' } : msg
+          )
+        }
+        // Add new message if not exists
+        if (!prev.some(msg => msg._id === data.message._id)) {
+          return [...prev, data.message]
+        }
+        return prev
+      })
+      scrollToBottom()
+    }
+
+    const handleTyping = ({ chatId, userId: typingUserId, isTyping }) => {
+      if (chatId === selectedChat.chatId && typingUserId !== userId) {
         setTypingUsers(prev =>
           isTyping
-            ? [...new Set([...prev, userId])]
-            : prev.filter(id => id !== userId)
+            ? [...new Set([...prev, typingUserId])]
+            : prev.filter(id => id !== typingUserId)
         );
       }
     };
-
-    // Set up all listeners at once
-    socket.on('messages-list', handleMessagesList);
-    socket.on('new-message', handleNewMessage);
-    socket.on('typing', handleTyping);
-
-    return () => {
-      // Clean up all listeners
-      socket.off('messages-list', handleMessagesList);
-      socket.off('new-message', handleNewMessage);
-      socket.off('typing', handleTyping);
-      handledMessageIds.clear();
-    };
-  }, [selectedChat?.chatId]);
-
-
-  // Real-time message and typing listeners
-  useEffect(() => {
-    if (!selectedChat?.chatId) return
-
-    const handleNewMessage = (data) => {
-      // If server emits { chatId, message, sender }
-      if (data.chatId === selectedChat.chatId) {
-        setMessages(prev => [...prev, data.message])
-        scrollToBottom()
-      }
-    }
-    const handleTyping = ({ chatId, userId, isTyping }) => {
-      if (chatId === selectedChat.chatId && userId !== selectedChat.userId) {
-        setTypingUsers(prev =>
-          isTyping
-            ? [...new Set([...prev, userId])]
-            : prev.filter(id => id !== userId)
-        )
-      }
-    }
-
+    socket.on('messages-list', handleMessagesList)
     socket.on('new-message', handleNewMessage)
     socket.on('typing', handleTyping)
 
     return () => {
+      socket.off('messages-list', handleMessagesList)
       socket.off('new-message', handleNewMessage)
       socket.off('typing', handleTyping)
     }
-  }, [selectedChat])
+  }, [selectedChat?.chatId, userId])
 
-  // Handle typing indicators
+  // Typing indicator with debounce
   useEffect(() => {
-    if (!selectedChat?.chatId) return
+    if (!selectedChat?.chatId || !message) return
 
-    let typingTimeout
-    const handleTypingChange = () => {
+    const typingTimeout = setTimeout(() => {
       socket.emit('typing', {
         chatId: selectedChat.chatId,
         isTyping: message.length > 0
       })
+    }, 500)
 
-      clearTimeout(typingTimeout)
-      if (message.length > 0) {
-        typingTimeout = setTimeout(() => {
-          socket.emit('typing', {
-            chatId: selectedChat.chatId,
-            isTyping: false
-          })
-        }, 3000)
-      }
-    }
-
-    handleTypingChange()
     return () => clearTimeout(typingTimeout)
   }, [message, selectedChat?.chatId])
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+    messagesEndRef.current?.scrollIntoView({ behavior: 'auto' })
   }
 
   const handleSendMessage = () => {
     if (!message.trim() || !selectedChat?.chatId) return
 
+    const tempId = `temp-${Date.now()}`
+    const tempMessage = {
+      tempId,
+      message: message.trim(),
+      sender: { _id: userId },
+      createdAt: new Date(),
+      status: 'sending'
+    }
+
+    setMessages(prev => [...prev, tempMessage])
+    setMessage('')
+    
     socket.emit('send-message', {
       chatId: selectedChat.chatId,
       message: message.trim(),
       chatModel: 'DirectChat',
-      senderId: userId
+      senderId: userId,
+      tempId
     })
-
-    setMessage('')
+    scrollToBottom()
   }
 
   const formatMessageDate = (date) => {
@@ -176,10 +147,14 @@ export default function Window({ selectedChat, userId }) {
 
     if (!messages.length && !isLoading) {
       return (
-        <div className="flex flex-col items-center justify-center h-full text-gray-500">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="flex flex-col items-center justify-center h-full text-gray-500"
+        >
           <p>No messages yet</p>
           <p className="text-sm">Start the conversation!</p>
-        </div>
+        </motion.div>
       )
     }
 
@@ -191,51 +166,66 @@ export default function Window({ selectedChat, userId }) {
     }, {})
 
     return Object.entries(groupedMessages).map(([date, dayMessages]) => (
-  <React.Fragment key={date}>
-    <SystemMSG msg={date} />
-    {dayMessages.map(msg =>
-      msg.sender._id === userId ? (
-        <MessageBoxMe
-          key={msg._id}
-          msg={msg.message}
-          time={format(new Date(msg.createdAt), 'h:mm a')}
-          status={msg.status}
-        />
-      ) : (
-        <MessageBoxTo
-          key={msg._id}
-          msg={msg.message}
-          time={format(new Date(msg.createdAt), 'h:mm a')}
-        />
-      )
-    )}
-  </React.Fragment>
-))
+      <React.Fragment key={date}>
+        <SystemMSG msg={date} />
+        <AnimatePresence>
+          {dayMessages.map(msg => {
+            const key = msg.tempId || msg._id
+            return msg.sender._id === userId ? (
+              <motion.div
+                key={key}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.2 }}
+              >
+                <MessageBoxMe
+                  msg={msg.message}
+                  time={format(new Date(msg.createdAt), 'h:mm a')}
+                  status={msg.status}
+                />
+              </motion.div>
+            ) : (
+              <motion.div
+                key={key}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.2 }}
+              >
+                <MessageBoxTo
+                  msg={msg.message}
+                  time={format(new Date(msg.createdAt), 'h:mm a')}
+                />
+              </motion.div>
+            )
+          })}
+        </AnimatePresence>
+      </React.Fragment>
+    ))
   }
 
   return (
-    <div className='window w-[70%] h-full flex flex-col items-center justify-center gap-2'>
+    <div className='window w-full md:w-[70%] h-full flex flex-col items-center justify-center gap-2'>
       <div className={`w-full h-[90%] ${!selectedChat ? 'bg-[#f6f6f6]' : 'bg-[#fdeaff]'} rounded-t-3xl overflow-hidden shadow-[0_25px_50px_-12px_rgba(0,0,0,0.08)] relative`}>
         {!selectedChat ? (
           <div className='w-full h-full flex items-center justify-center'>
-            <img src="/logo.png" width={300} alt="" />
+            <img src="/logo.png" width={300} alt="" className="max-w-[80%] md:max-w-none" />
           </div>
         ) : (
           <>
-            <div className='w-full px-6 py-4 flex items-center gap-4 backdrop-blur-lg bg-gradient-to-r from-white/95 to-white/90 border-b border-white/30'>
+            <div className='w-full px-4 md:px-6 py-3 md:py-4 flex items-center gap-3 md:gap-4 backdrop-blur-lg bg-gradient-to-r from-white/95 to-white/90 border-b border-white/30'>
               <div className='relative'>
-                <div className='w-12 h-12 rounded-full border-2 border-white overflow-hidden shadow-lg'>
+                <div className='w-10 h-10 md:w-12 md:h-12 rounded-full border-2 border-white overflow-hidden shadow-lg'>
                   <img
                     src={selectedChat.profileImg || '/normaldm.jpg'}
                     alt={selectedChat.firstName}
                     className='w-full h-full object-cover'
                   />
                 </div>
-                <div className='absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white animate-pulse'></div>
+                <div className='absolute bottom-0 right-0 w-2 h-2 md:w-3 md:h-3 bg-green-500 rounded-full border-2 border-white animate-pulse'></div>
               </div>
 
-              <div className='flex-1'>
-                <h2 className='text-lg font-semibold text-gray-900 tracking-tight'>
+              <div className='flex-1 min-w-0'>
+                <h2 className='text-base md:text-lg font-semibold text-gray-900 tracking-tight truncate'>
                   {selectedChat.firstName} {selectedChat.lastName}
                 </h2>
                 {selectedChat.isOnline && (
@@ -243,9 +233,9 @@ export default function Window({ selectedChat, userId }) {
                 )}
               </div>
 
-              <div className='flex items-center gap-3'>
-                <button className='p-2 text-gray-500 hover:text-gray-700 transition-colors'>
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+              <div className='flex items-center gap-2 md:gap-3'>
+                <button className='p-1 md:p-2 text-gray-500 hover:text-gray-700 transition-colors'>
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 md:h-5 md:w-5" viewBox="0 0 20 20" fill="currentColor">
                     <path fillRule="evenodd" d="M7 4a3 3 0 016 0v4a3 3 0 11-6 0V4zm4 10.93A7.001 7.001 0 0017 8a1 1 0 10-2 0A5 5 0 015 8a1 1 0 00-2 0 7.001 7.001 0 006 6.93V17H6a1 1 0 100 2h8a1 1 0 100-2h-3v-2.07z" clipRule="evenodd" />
                   </svg>
                 </button>
@@ -259,7 +249,7 @@ export default function Window({ selectedChat, userId }) {
               </div>
             </div>
 
-            <div className='w-full h-[calc(100%-80px)] p-6 overflow-y-auto bg-gradient-to-b from-white to-gray-50/30'>
+            <div className='w-full h-[calc(100%-80px)] p-4 md:p-6 overflow-y-auto bg-gradient-to-b from-white to-gray-50/30'>
               {renderMessages()}
               {typingUsers.length > 0 && <TypingIndicator />}
               <div ref={messagesEndRef} />

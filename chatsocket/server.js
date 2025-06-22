@@ -187,7 +187,9 @@ io.on("connection", (socket) => {
     try {
       const { senderId, chatId, message, chatModel } = data;
 
-      const sender = await UserModel.findById(senderId);
+      const sender = await UserModel.findById(senderId).select(
+        "_id firstName lastName profileImg"
+      );
       if (!sender) {
         return socket.emit("msg-send-error", {
           status: "error",
@@ -198,11 +200,6 @@ io.on("connection", (socket) => {
       let chat;
       if (chatModel === "DirectChat") {
         chat = await DirectChatModel.findOne({
-          _id: chatId,
-          members: senderId, // Ensure sender is in chat
-        });
-      } else if (chatModel === "GroupChat") {
-        chat = await GroupChatModel.findOne({
           _id: chatId,
           members: senderId,
         });
@@ -215,120 +212,116 @@ io.on("connection", (socket) => {
         });
       }
 
-      const newMessage = await MessageModel.create({
-        chatId,
-        chatModel,
-        sender: senderId,
-        message,
-        msgType: "Personal",
-      });
-
-      if (chatModel === "DirectChat") {
-        await DirectChatModel.findByIdAndUpdate(chatId, {
-          lastMessage: message,
-          updatedAt: new Date(),
-        });
-      } else {
-        await GroupChatModel.findByIdAndUpdate(chatId, {
-          lastMessage: `${sender.firstName}: ${message}`,
-          updatedAt: new Date(),
-        });
-      }
-
-      const recipients = chat.members.filter(
-        (member) => member.toString() !== senderId.toString()
+      const newMessage = await MessageModel.create(
+        {
+          chatId,
+          chatModel,
+          sender: senderId,
+          message,
+          msgType: "Personal",
+        },
+        {
+          // Disable change stream for this operation
+          disableMiddlewares: true,
+        }
       );
 
-      // Emit to sender (confirmation)
-      socket.emit("message-sent", {
-        status: "success",
-        message: newMessage,
+      // Populate the sender info
+
+      const messageToSend = {
+        ...newMessage.toObject(),
+        sender,
+        chatId,
+      };
+
+      // EMIT ONLY ONCE - to everyone in the chat room
+      io.to(chatId.toString()).emit("single-message", {
+        message: messageToSend,
+        tempId: data.tempId, // Pass through the tempId
       });
 
-      // Emit to all recipients
-      recipients.forEach((userId) => {
-        io.to(userId.toString()).emit("new-message", {
-          chatId,
-          message: newMessage,
-          sender: {
-            _id: sender._id,
-            firstName: sender.firstName,
-            lastName: sender.lastName,
-            profileImg: sender.profileImg,
-          },
-        });
+      // Update chat last message
+      await DirectChatModel.findByIdAndUpdate(chatId, {
+        lastMessage: message,
+        updatedAt: new Date(),
       });
     } catch (error) {
       socket.emit("msg-send-error", {
         status: "error",
-        message: "Failed to create chat",
+        message: "Failed to send message",
       });
     }
   });
 
   // Message Change Stream for real-time updates
+  // Remove the message change stream or modify it to avoid duplicates
   const messageChangeStream = MessageModel.watch([], {
     fullDocument: "updateLookup",
   });
 
   messageChangeStream.on("change", (change) => {
-    if (change.operationType === "insert") {
-      const newMessage = change.fullDocument;
-
-      // Emit to all participants in the chat room
-      io.to(newMessage.chatId.toString()).emit("new-message", {
-        message: newMessage,
-        chatId: newMessage.chatId,
-      });
-    }
+    // if (change.operationType === "insert") {
+    //   // Don't emit here - we're handling it in send-message
+    // }
   });
 
   // Get initial messages
-  socket.on("get-messages", async ({ chatId, limit = 50, skip = 0 }) => {
-    try {
-      
-      const chat = await DirectChatModel.findOne({
-        _id: chatId,
-      });
+  // Store intervals per socket+chat
+  const messageIntervals = {};
 
-      if (!chat) {
-        return socket.emit("messages-error", {
+  socket.on("get-messages", async ({ chatId, limit = 50, skip = 0 }) => {
+    // Clear any previous interval for this chat
+    if (messageIntervals[chatId]) {
+      clearInterval(messageIntervals[chatId]);
+    }
+
+    // Define the polling function
+    const fetchMessages = async () => {
+      try {
+        const chat = await DirectChatModel.findOne({ _id: chatId });
+        if (!chat) {
+          return socket.emit("messages-error", {
+            status: "error",
+            message: "Chat not found or access denied",
+          });
+        }
+
+        const messages = await MessageModel.find({ chatId })
+          .sort({ createdAt: -1 })
+          .skip(skip)
+          .limit(limit)
+          .populate("sender", "_id firstName lastName profileImg")
+          .lean();
+
+        const orderedMessages = messages.reverse();
+
+        socket.emit("messages-list", {
+          status: "success",
+          messages: orderedMessages,
+          chatId,
+          hasMore: messages.length === limit,
+        });
+
+        socket.join(chatId.toString());
+      } catch (error) {
+        socket.emit("messages-error", {
           status: "error",
-          message: "Chat not found or access denied",
+          message: "Failed to fetch messages",
         });
       }
+    };
 
-      // Fetch messages with pagination
-      const messages = await MessageModel.find({ chatId })
-        .sort({ createdAt: -1 }) // Newest first
-        .skip(skip)
-        .limit(limit)
-        .populate("sender", "_id firstName lastName profileImg")
-        .lean();
+    // Fetch immediately
+    fetchMessages();
 
-      // Reverse to show oldest first in UI
-      const orderedMessages = messages.reverse();
-
-      socket.emit("messages-list", {
-        status: "success",
-        messages: orderedMessages,
-        chatId,
-        hasMore: messages.length === limit,
-      });
-
-      // Join the chat room for real-time updates
-      socket.join(chatId.toString());
-    } catch (error) {
-      socket.emit("messages-error", {
-        status: "error",
-        message: "Failed to fetch messages",
-      });
-    }
+    // Start polling every 150ms (like chat list)
+    messageIntervals[chatId] = setInterval(fetchMessages, 150);
   });
-  // Disconnect
+
+  // Clean up intervals on disconnect
   socket.on("disconnect", () => {
-    console.log("❌ Client Disconnected: " + socket.id);
-    clearInterval(interval);
+    Object.values(messageIntervals).forEach(clearInterval);
+    clearInterval(interval); // your chat list interval
     chatChangeStream.close();
   });
 });
