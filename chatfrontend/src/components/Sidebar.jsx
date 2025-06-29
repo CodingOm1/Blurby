@@ -3,22 +3,20 @@
 import React from 'react'
 import { CiSearch } from "react-icons/ci";
 import { IoAdd } from "react-icons/io5";
-import Chat from './Chat';
 
 
-export default function Sidebar({ chats, setFinderOpen, userId, setSelectedChat }) {
+export default function Sidebar() {
 
 
 
-    console.log(chats)
 
 
 
 
     return (
-        <div className='sidebar w-[30%] h-full  flex flex-col items-center justify-center gap-2'>
+        <div className='sidebar w-full md:bg-transparent bg-[#f6f6f6] md:w-[30%] h-full  flex flex-col items-center justify-center gap-2'>
 
-            <div className='bg-[#F6F6F6] w-full h-20 shadow-[0_4px_12px_rgba(0,0,0,0.08)] rounded-2xl flex items-center justify-between px-6 '>
+            <div className='bg-[#F6F6F6] w-full h-20 md:shadow-[0_4px_12px_rgba(0,0,0,0.08)] rounded-2xl flex items-center justify-between px-6 '>
 
                 {/* Title */}
                 <h2 className='text-2xl font-semibold text-black font-inter select-none'>Chats</h2>
@@ -30,21 +28,21 @@ export default function Sidebar({ chats, setFinderOpen, userId, setSelectedChat 
                         placeholder='Search'
                         className='w-full h-full rounded-full  placeholder:text-gray-400 text-sm outline-none text-black font-poppins'
                     />
-                    <CiSearch onClick={() => { setFinderOpen(true) }} className='text-xl text-gray-500 cursor-pointer' />
+                    <CiSearch className='text-xl text-gray-500 cursor-pointer' />
                 </div>
 
                 {/* Add Button */}
-                <div onClick={(e) => { setFinderOpen(true) }} className='w-10 h-10 rounded-full bg-purple-700 hover:bg-purple-600 cursor-pointer flex items-center justify-center transition-all'>
+                <div  className='w-10 h-10 rounded-full bg-purple-700 hover:bg-purple-600 cursor-pointer flex items-center justify-center transition-all'>
                     <IoAdd className='text-2xl text-white' />
                 </div>
             </div>
 
             <div className=' bg-[#F6F6F6] w-full h-full shadow-[5px_4px_12px_rgba(0,0,0,0.05)] rounded-l-3xl flex flex-col items-start py-5 overflow-x-hidden overflow-y-scroll relative modern_sc
             ' >
-                {/* <div className='w-full px-5 text-[11px] text-gray-400 font-semibold'>CHATS</div> */}
-                {chats.map((chat, index) => (
+                <div className='w-full px-5 text-[11px] text-gray-400 font-semibold'>CHATS</div>
+                {/* {chats.map((chat, index) => (
                     <Chat setSelectedChat={setSelectedChat} mainInfo={chat}  key={chat.chatId || index} name={chat.firstName} lastMessage={chat.lastMessage} lastTime={chat.lastTime} isOnline={chat.isOnline} unread={chat.unread} />
-                ))}
+                ))} */}
 
 
                 <div className="absolute bottom-0 left-0 w-full h-10 bg-gradient-to-t from-white to-transparent z-10 pointer-events-none" />

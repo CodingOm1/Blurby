@@ -1,99 +1,52 @@
 'use client'
-
+import React, { useState } from 'react'
 import ActionBar from '@/components/ActionBar'
 import Sidebar from '@/components/Sidebar'
 import Window from '@/components/Window'
-import axios from 'axios'
-import React, { useEffect, useState } from 'react'
-import { connectSocket, getSocket } from '@/lib/socket.js'
-import NewChat from '@/components/NewChat'
+import { motion, AnimatePresence } from "framer-motion";
+
 
 export default function Page() {
-  const [userId, setUserId] = useState('')
-  const [chatList, setChatList] = useState([])
-  const [finderOpen, setFinderOpen] = useState(false)
-  const [selectedChat, setSelectedChat] = useState(null)
+
+  const [selectedChat, setSelectedChat] = useState('hi')
 
 
-  const [Message, setMessage] = useState(null)
-
-
-  // ✅ Step 1: Token Checker
-  const CheckToken = async () => {
-    const BlurbyToken = localStorage.getItem('blurbyToken')
-    if (BlurbyToken) {
-      try {
-        const fetchResponse = await axios.get('/api/user/get', {
-          headers: { Authorization: `Bearer ${BlurbyToken}` },
-        })
-
-        if (fetchResponse.status === 200) {
-          setUserId(fetchResponse.data.User._id)
-        }
-      } catch (error) {
-        console.log(error)
-      }
-    }
-  }
-
-  // ✅ Step 2: Run Token Checker on Mount
-  useEffect(() => {
-    const fetchUser = async () => {
-      await CheckToken()
-    }
-    fetchUser()
-  }, [])
-
-  // ✅ Step 3: Connect Socket when userId is ready
-  useEffect(() => {
-    if (!userId) return
-
-    connectSocket(userId)
-    const socket = getSocket()
-
-    socket.on('chat-list', (data) => {
-      const { chats, users } = data
-
-      const formattedChats = chats.map((chat) => {
-        const opponentId = chat.members.find((id) => id !== userId)
-        const opponent = users.find((user) => user._id === opponentId)
-
-        return {
-          chatId: chat._id,
-          firstName: opponent?.firstName || 'Unknown',
-          lastName: opponent?.lastName || 'Unknown',
-          userId: opponent?._id,
-          lastMessage: chat.lastMessage || '',
-          lastTime: chat.lastTime || '',
-          isOnline: chat.isOnline || false,
-          unread: chat.unread || 0,
-        }
-      })
-
-      setChatList(formattedChats)
-    })
-
-    socket.on('chat-list-error', (err) => {
-      console.error('Chat List Error:', err)
-    })
-
-    
-    return () => {
-      socket.off('chat-list')
-      socket.off('chat-list-error')
-    }
-  }, [userId])
-
-  
-  // ✅ UI
   return (
-    <>
-      {finderOpen && <NewChat userId={userId} setFinderOpen={setFinderOpen} setSelectedChat={setSelectedChat} />}
-      <div className='w-full h-screen bg-[#EEEEEE] p-5 flex items-center justify-center gap-3'>
-        <ActionBar />
-        <Sidebar setSelectedChat={setSelectedChat} userIs={userId} chats={chatList} setFinderOpen={setFinderOpen} />
-        <Window userId={userId} setMessage={setMessage} Message={Message} selectedChat={selectedChat} setSelectedChat={setSelectedChat} />
+    <div className={`w-full max-h-screen h-screen bg-[#eee3ff] md:p-5 overflow-hidden 
+    flex  items-center justify-center gap-2`}>
+      <div className='md:hidden w-full h-full flex flex-col overflow-hidden'>
+        <AnimatePresence mode="wait">
+          {!selectedChat ? (
+            <motion.div
+              key="sidebar"
+              initial={{ x: 0, opacity: 1 }}
+              animate={{ x: 0, opacity: 1 }}
+              exit={{ x: "-100%", opacity: 0 }}
+              transition={{ duration: 0.3 }}
+              className="w-full h-full flex flex-col"
+            >
+              <Sidebar />
+              <ActionBar />
+            </motion.div>
+          ) : (
+            <motion.div
+              key="window"
+              initial={{ x: "100%", opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              exit={{ x: "100%", opacity: 0 }}
+              transition={{ duration: 0.3 }}
+              className="w-full h-full"
+            >
+              <Window />
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
-    </>
+      <div className='w-full h-full hidden md:flex items-center justify-center gap-5 p-2'>
+            <ActionBar />
+            <Sidebar />
+            <Window />
+      </div>
+    </div>
   )
 }

@@ -4,12 +4,14 @@ import { motion } from 'framer-motion'
 import { FiPaperclip, FiMic, FiSend } from 'react-icons/fi'
 import { BsEmojiSmile } from 'react-icons/bs'
 
-export default function MessageBar({ message, setMessage, onSend }) {
+export default function MessageBar({ onSend }) {
   const [isRecording, setIsRecording] = useState(false)
+
+  const [message, setMessage] = useState('')
 
 
   return (
-    <div className="w-full px-4 pb-4">
+    <div className="absolute bottom-0 left-0 w-full px-4 pb-4">
       <motion.div
         className="flex items-center gap-2 bg-white rounded-xl p-2 shadow-[0_8px_30px_rgba(0,0,0,0.08)]"
         whileHover={{
@@ -37,6 +39,7 @@ export default function MessageBar({ message, setMessage, onSend }) {
         {/* Emoji button */}
         <motion.button
           whileTap={{ scale: 0.9 }}
+          
           className="p-2 text-gray-500 hover:text-yellow-500 rounded-lg"
         >
           <BsEmojiSmile size={20} />

@@ -4,6 +4,7 @@ import Link from 'next/link'
 import axios from 'axios'
 import SmallLoading from '@/components/ui/SmallLoading'
 import AlertBubble from '@/components/ui/Bubbles'
+import { useRouter } from 'next/navigation'
 
 export default function Page() {
 
@@ -15,7 +16,7 @@ export default function Page() {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [loading, setLoading] = useState(false)
 
-
+  const router = useRouter()
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -43,7 +44,8 @@ export default function Page() {
       console.log(response.data)
       localStorage.setItem("blurbyToken", response.data.token)
       setLoading(false)
-      AlertBubble(response.data.message, )
+      AlertBubble(response.data.message, 'good')
+      router.push('/dashboard')
     } catch (error) {
       console.log("Error", error)
       setLoading(false)
@@ -57,7 +59,7 @@ export default function Page() {
 
   return (
     <div className='w-full select-none h-screen flex items-center justify-center bg-[#9696a5] p-4'>
-      
+
       <div className="signup w-full md:w-[90%] lg:w-[80%] xl:w-[70%] h-full md:h-[90%] bg-[#231d33] rounded-2xl p-5 flex flex-col md:flex-row items-center justify-center gap-5 mod_shadow">
 
         {/* LEFT IMAGE SECTION */}
