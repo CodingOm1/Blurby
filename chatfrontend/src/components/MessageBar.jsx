@@ -4,10 +4,9 @@ import { motion } from 'framer-motion'
 import { FiPaperclip, FiMic, FiSend } from 'react-icons/fi'
 import { BsEmojiSmile } from 'react-icons/bs'
 
-export default function MessageBar({ onSend }) {
+export default function MessageBar({ onSend, setMessage, message }) {
   const [isRecording, setIsRecording] = useState(false)
 
-  const [message, setMessage] = useState('')
 
 
   return (

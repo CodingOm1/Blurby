@@ -18,15 +18,6 @@ export default function NewChat({ userId, setFinderOpen, setSelectedChat }) {
 
     const socket = getSocket();
     if (!socket) connectSocket(userId);
-
-    return () => {
-      // Cleanup socket listeners when component unmounts
-      if (socket) {
-        socket.off('user-found');
-        socket.off('user-not-found');
-        socket.off('error');
-      }
-    };
   }, [userId]);
 
   useEffect(() => {
@@ -48,8 +39,8 @@ export default function NewChat({ userId, setFinderOpen, setSelectedChat }) {
     socket.emit('find-user-with-phone', { userId, phone });
 
     const handleUserFound = (response) => {
-      if (response.status === 'success') {
-        setNewUser(response.user);
+      if (response.status === 'good') {
+        setNewUser(response.result);
         setError(null);
       } else {
         setNewUser(null);
@@ -58,20 +49,11 @@ export default function NewChat({ userId, setFinderOpen, setSelectedChat }) {
       setIsLoading(false);
     };
 
-    const handleError = (err) => {
-      setNewUser(null);
-      setError(err.message || "Error searching for user");
-      setIsLoading(false);
-    };
+    socket.on('find-user-with-phone', handleUserFound);
 
-    socket.on('user-found', handleUserFound);
-    socket.on('user-not-found', handleError);
-    socket.on('error', handleError);
 
     return () => {
-      socket.off('user-found', handleUserFound);
-      socket.off('user-not-found', handleError);
-      socket.off('error', handleError);
+      socket.off('find-user-with-phone', handleUserFound);
     };
   }, [phone, userId]);
 
@@ -87,36 +69,23 @@ export default function NewChat({ userId, setFinderOpen, setSelectedChat }) {
     try {
       socket.emit("create-new-chat", {
         userId,
-        newUserId: newUser._id
+        targetedId: newUser._id
       });
 
       const handleChatCreated = (response) => {
-        if (response.status === 'success') {
+        if (response.status === 'good') {
           toast.success("Chat created successfully!");
-          setFinderOpen(false);
-
-          setSelectedChat({
-            chatId: response.chat._id,
-            firstName: response.targetUser?.firstName || 'Unknown',
-            lastName: response.targetUser?.lastName || 'Unknown',
-            userId: response.targetUser?._id,
-            profileImg: response.targetUser?.profileImg || '/normaldm.jpg',
-            lastMessage: '',
-            lastTime: '',
-            isOnline: false,
-            unread: 0
-          });
+          // setFinderOpen(false);
+          console.log(response)
+          
         } else {
           setError(response.message || "Failed to create chat");
         }
         setIsLoading(false);
       };
 
-      socket.on("chat-created", handleChatCreated);
-      socket.on("error", (err) => {
-        setError(err.message || "Error creating chat");
-        setIsLoading(false);
-      });
+      socket.on("create-new-chat", handleChatCreated);
+    
 
     } catch (err) {
       setError(err.message || "Error creating chat");
@@ -125,7 +94,7 @@ export default function NewChat({ userId, setFinderOpen, setSelectedChat }) {
   };
 
   return (
-    <div className='w-full h-screen fixed top-0 left-0 backdrop-blur-[2px] bg-[#00000023] z-20'>
+    <div className='w-full h-screen fixed top-0 left-0 backdrop-blur-[2px] bg-[#00000023] z-30'>
       <div className='w-full h-screen flex items-center justify-center relative'>
         <div className='w-[500px] max-h-[400px] py-5 bg-white rounded-xl p-5 flex flex-col items-center justify-center gap-5 shadow-md'>
           <div className='flex items-center w-full gap-2'>

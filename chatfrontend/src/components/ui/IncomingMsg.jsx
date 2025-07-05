@@ -1,6 +1,6 @@
 import React from 'react'
 
-export default function MessageBoxTo({msg, time}) {
+export default function IncomingMsg({msg, time}) {
   return (
     <div className='flex mb-6 group'>
                   <div className='max-w-[75%] px-4 py-3 bg-gray-50 rounded-3xl rounded-tl-none shadow-sm border border-gray-100 relative'>
