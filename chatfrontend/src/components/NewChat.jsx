@@ -75,7 +75,8 @@ export default function NewChat({ userId, setFinderOpen, setSelectedChat }) {
       const handleChatCreated = (response) => {
         if (response.status === 'good') {
           toast.success("Chat created successfully!");
-          // setFinderOpen(false);
+          setFinderOpen(false);
+          setSelectedChat(response.chat)
           console.log(response)
           
         } else {

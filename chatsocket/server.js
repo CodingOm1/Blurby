@@ -86,10 +86,6 @@ io.on("connection", (socket) => {
       chats: formattedChats,
     });
   });
-  // DirectChatModel.watch().on('change', (change) => {
-  //   console.log('DirectChat changed')
-  // })
-
   socket.on("find-user-with-phone", async (data) => {
     const { phone, userId } = data;
 
@@ -133,7 +129,9 @@ io.on("connection", (socket) => {
         });
       }
 
-      const isTarget = await UserModel.findById(targetedId);
+      const isTarget = await UserModel.findById(targetedId).populate(
+        "firstName lastName _id"
+      );
       if (!isTarget) {
         socket.emit("create-new-chat", {
           status: "error",
@@ -151,6 +149,7 @@ io.on("connection", (socket) => {
           chat: isExistChat,
           newUser: isTarget,
         });
+        return;
       }
 
       const CreateChat = await DirectChatModel.create({
@@ -159,15 +158,40 @@ io.on("connection", (socket) => {
 
       socket.emit("create-new-chat", {
         status: "good",
-        message: "Chat Created successfully",
-        chat: CreateChat,
-        newUser: isTarget,
+        chatId: CreateChat._id,
+        lastMessage: CreateChat.lastMessage,
+        updatedAt: CreateChat.updatedAt,
+        targetUser: isTarget,
       });
 
-      io.to(userId.toString()).emit("fetch-all-chats", { chat: CreateChat });
-      io.to(targetedId.toString()).emit("fetch-all-chats", {
-        chat: CreateChat,
-      });
+      const senderRoom = io.sockets.adapter.rooms.get(userId.toString());
+      const receiverRoom = io.sockets.adapter.rooms.get(targetedId.toString());
+
+      if (senderRoom && receiverRoom) {
+        // Both users are in their rooms, emit to both
+        io.to(userId.toString()).emit("fetchMessages", {
+          status: "good",
+          chatId: CreateChat._id,
+          lastMessage: CreateChat.lastMessage,
+          updatedAt: CreateChat.updatedAt,
+          targetUser: isTarget,
+        });
+        io.to(targetedId.toString()).emit("fetchMessages", {
+          status: "good",
+          chatId: CreateChat._id,
+          lastMessage: CreateChat.lastMessage,
+          updatedAt: CreateChat.updatedAt,
+          targetUser: isTarget,
+        });
+      } else {
+        socket.emit("create-new-chat", {
+          status: "good",
+          chatId: CreateChat._id,
+          lastMessage: CreateChat.lastMessage,
+          updatedAt: CreateChat.updatedAt,
+          targetUser: isTarget,
+        });
+      }
     } catch (error) {
       console.log(error);
       socket.emit("create-new-chat", {
